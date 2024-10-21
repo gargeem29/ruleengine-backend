@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "operator": "AND",
+    "left": {
+      "operand": "age > 30"
+    },
+    "right": {
+      "operand": "income > 50000"
+    }
+  }
+}
