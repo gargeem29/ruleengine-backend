@@ -12,20 +12,46 @@ public class RuleEngine {
   // Method to create a rule (AST) from JSON-like structure (Map)
   // Method to create rules from JSON-like map
   public static Node createRuleFromJson(Map<String, Object> jsonMap) {
+    // Check if the input JSON map is null or missing the required "rules" key
     if (jsonMap == null || !jsonMap.containsKey("rules")) {
         throw new IllegalArgumentException("Invalid JSON structure for rules");
     }
 
-    Map<String, Object> rule = (Map<String, Object>) jsonMap.get("rules");
-    String operator = (String) rule.get("operator");
-    Map<String, Object> leftOperand = (Map<String, Object>) rule.get("left");
-    Map<String, Object> rightOperand = (Map<String, Object>) rule.get("right");
+    // Extract the rule map from the JSON structure
+    Map<String, Object> rule;
+    try {
+        rule = (Map<String, Object>) jsonMap.get("rules");
+    } catch (ClassCastException e) {
+        throw new IllegalArgumentException("Rules must be a valid JSON object", e);
+    }
 
+    // Extract the operator and operands, with null checks
+    String operator = (String) rule.get("operator");
+    if (operator == null) {
+        throw new IllegalArgumentException("Operator is missing from the rule");
+    }
+
+    // Check and cast left and right operands
+    Map<String, Object> leftOperand = getOperand(rule, "left");
+    Map<String, Object> rightOperand = getOperand(rule, "right");
+
+    // Create nodes for left and right operands
     Node leftNode = new Node("operand", (String) leftOperand.get("operand"), null, null);
     Node rightNode = new Node("operand", (String) rightOperand.get("operand"), null, null);
 
+    // Return the combined operator node
     return new Node("operator", operator, leftNode, rightNode);
 }
+
+// Helper method to safely extract and validate operands
+private static Map<String, Object> getOperand(Map<String, Object> rule, String key) {
+    Object operand = rule.get(key);
+    if (!(operand instanceof Map)) {
+        throw new IllegalArgumentException(key + " must be a valid JSON object");
+    }
+    return (Map<String, Object>) operand;
+}
+
 
 // Helper method to create operand nodes
 private Node createOperandNode(Map<String, Object> operandMap) {
