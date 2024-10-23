@@ -9,57 +9,70 @@ import java.util.regex.Pattern;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class RuleEngine {
-  // Method to create a rule (AST) from JSON-like structure (Map)
-  // Method to create rules from JSON-like map
-  public static Node createRuleFromJson(Map<String, Object> jsonMap) {
-    // Check if the input JSON map is null or missing the required "rules" key
-    if (jsonMap == null || !jsonMap.containsKey("rules")) {
-        throw new IllegalArgumentException("Invalid JSON structure for rules");
+
+    // Method to create a rule (AST) from JSON-like structure (Map)
+    public static Node createRuleFromJson(Map<String, Object> jsonMap) {
+        // Check if the input JSON map is null or missing the required "rules" key
+        if (jsonMap == null || !jsonMap.containsKey("rules")) {
+            throw new IllegalArgumentException("Invalid JSON structure for rules");
+        }
+    
+        Object rulesObject = jsonMap.get("rules");
+        
+        // Check if rulesObject is a List or a Map
+        if (rulesObject instanceof List) {
+            List<Map<String, Object>> ruleList = (List<Map<String, Object>>) rulesObject;
+            Node combinedNode = null;
+            
+            // Process each rule in the list and combine them
+            for (Map<String, Object> rule : ruleList) {
+                Node ruleNode = processRule(rule); // Create a Node from each rule
+                if (combinedNode == null) {
+                    combinedNode = ruleNode;
+                } else {
+                    // Combine rules using AND or OR operator (modify as needed)
+                    combinedNode = new Node("operator", "AND", combinedNode, ruleNode);
+                }
+            }
+            return combinedNode;
+        } else if (rulesObject instanceof Map) {
+            // If it's a single rule (not a list)
+            return processRule((Map<String, Object>) rulesObject);
+        } else {
+            throw new IllegalArgumentException("Rules must be a valid JSON object or a list");
+        }
+    }
+    
+    // Helper method to process individual rules
+    private static Node processRule(Map<String, Object> rule) {
+        Map<String, Object> leftOperand = getOperand(rule, "left");
+        Map<String, Object> rightOperand = getOperand(rule, "right");
+    
+        Node leftNode = new Node("operand", (String) leftOperand.get("operand"), null, null);
+        Node rightNode = new Node("operand", (String) rightOperand.get("operand"), null, null);
+    
+        String operator = (String) rule.get("operator");
+    
+        return new Node("operator", operator, leftNode, rightNode);
     }
 
-    // Extract the rule map from the JSON structure
-    Map<String, Object> rule;
-    try {
-        rule = (Map<String, Object>) jsonMap.get("rules");
-    } catch (ClassCastException e) {
-        throw new IllegalArgumentException("Rules must be a valid JSON object", e);
+
+    // Helper method to safely extract and validate operands
+    private static Map<String, Object> getOperand(Map<String, Object> rule, String key) {
+        Object operand = rule.get(key);
+        if (!(operand instanceof Map)) {
+            throw new IllegalArgumentException(key + " must be a valid JSON object");
+        }
+        return (Map<String, Object>) operand;
     }
 
-    // Extract the operator and operands, with null checks
-    String operator = (String) rule.get("operator");
-    if (operator == null) {
-        throw new IllegalArgumentException("Operator is missing from the rule");
+    // Helper method to create operand nodes
+    private static Node createOperandNode(Map<String, Object> operandMap) {
+        String condition = (String) operandMap.get("operand");
+        return new Node("operand", condition, null, null);
     }
 
-    // Check and cast left and right operands
-    Map<String, Object> leftOperand = getOperand(rule, "left");
-    Map<String, Object> rightOperand = getOperand(rule, "right");
-
-    // Create nodes for left and right operands
-    Node leftNode = new Node("operand", (String) leftOperand.get("operand"), null, null);
-    Node rightNode = new Node("operand", (String) rightOperand.get("operand"), null, null);
-
-    // Return the combined operator node
-    return new Node("operator", operator, leftNode, rightNode);
-}
-
-// Helper method to safely extract and validate operands
-private static Map<String, Object> getOperand(Map<String, Object> rule, String key) {
-    Object operand = rule.get(key);
-    if (!(operand instanceof Map)) {
-        throw new IllegalArgumentException(key + " must be a valid JSON object");
-    }
-    return (Map<String, Object>) operand;
-}
-
-
-// Helper method to create operand nodes
-private Node createOperandNode(Map<String, Object> operandMap) {
-    String condition = (String) operandMap.get("condition");
-    return new Node("operand", condition, null, null);
-}
-
-    // Method to parse the rules from JSON
+    // Method to parse the rules from JSON (Jackson's JsonNode)
     private static Node parseRules(JsonNode ruleNode) {
         // If the node has an "operator", it's a complex rule with operands
         if (ruleNode.has("operator")) {
@@ -69,7 +82,7 @@ private Node createOperandNode(Map<String, Object> operandMap) {
             
             return combineRules(leftOperand, rightOperand, operator);
         }
-        
+
         // Otherwise, it's a simple condition (operand)
         String condition = ruleNode.get("operand").asText();
         return createRule(condition);
