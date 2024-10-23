@@ -1,13 +1,12 @@
 package com.example.ruleengine;
 
-import java.util.HashMap;  // Import the Node class
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;  // Ensure to import JUnit assertions
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,16 +23,22 @@ class RuleEngineTest {
     @Test
     void testCreateRuleFromJson() {
         // Arrange: Sample JSON-like input as a Map
+        Map<String, Object> leftOperand = new HashMap<>();
+        leftOperand.put("operand", "age > 30");
+
+        Map<String, Object> rightOperand = new HashMap<>();
+        rightOperand.put("operand", "income > 50000");
+
         Map<String, Object> rules = new HashMap<>();
-        rules.put("rules", List.of(
-                Map.of("operator", "AND", "operands", List.of(
-                        Map.of("condition", "age > 30"),
-                        Map.of("condition", "income > 50000")
-                ))
-        ));
+        rules.put("operator", "AND");
+        rules.put("left", leftOperand);
+        rules.put("right", rightOperand);
+
+        Map<String, Object> jsonMap = new HashMap<>();
+        jsonMap.put("rules", rules);
     
         // Act: Create rule from JSON-like Map
-        Node ruleNode = ruleEngine.createRuleFromJson(rules);
+        Node ruleNode = ruleEngine.createRuleFromJson(jsonMap);
     
         // Assert: Verify the structure of the rule node
         assertNotNull(ruleNode);  // Ensure the node is created

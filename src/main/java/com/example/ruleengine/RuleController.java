@@ -1,10 +1,12 @@
 package com.example.ruleengine;
 
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -107,6 +109,16 @@ public ResponseEntity<Object> evaluateRule(@RequestBody Map<String, Object> payl
             // Log the unexpected exception
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null); // Handle other unexpected exceptions
         }
+    }
+
+
+
+    // New GET method to retrieve rules
+    @GetMapping  // This maps to GET requests at /api/rules
+    public ResponseEntity<List<Node>> getRules() {
+        // Sample logic to retrieve rules; replace with actual implementation
+        List<Node> rules = List.of();  // Replace with your actual logic to fetch rules
+        return ResponseEntity.ok(rules);
     }
     
 }
